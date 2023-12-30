@@ -4,12 +4,13 @@ import * as z from "zod"
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "../ui/textarea"
 import FileUploader from "../shared/FileUploader"
 import { postValidation } from "@/lib/validation"
 import { Models } from "appwrite"
+import { useCreatePost } from "@/lib/react-query/queriesAndMutations";
 import { useUserContext } from "@/context/AuthContext"
 import { useToast } from "../ui/use-toast"
 
@@ -20,8 +21,8 @@ type PostFormProps = {
 const PostForm = ({ post }: PostFormProps) => {
     const { mutateAsync: createPost, isPending: isLoadingCreate } = useCreatePost();
     useCreatePost();
-    const { user } = useUserContext;
-    const { toast } = useToast;
+    const { user } = useUserContext();
+    const { toast } = useToast();
     const navigate = useNavigate();
 
     // 1. Define your form.

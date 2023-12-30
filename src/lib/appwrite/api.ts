@@ -54,7 +54,7 @@ export async function saveUserToDB(user: {
     }
 }
 
-export async function SignInAccount(user: { email: string; password: string; }) {
+export async function signInAccount(user: { email: string; password: string; }) {
     try {
         const session = await account.createEmailSession(user.email, user.password);
 
@@ -102,7 +102,9 @@ export async function createPost(post: INewPost) {
         if (!uploadedFile) throw Error;
 
         // Get file url
-        const fileUrl = getFilePreview(uploadedFile.$id)
+        const fileUrl = getFilePreview(uploadedFile.$id);
+
+        console.log({ fileUrl });
 
         if(!fileUrl) {
             deleteFile(uploadedFile.$id)
@@ -123,7 +125,7 @@ export async function createPost(post: INewPost) {
                 imageUrl: fileUrl,
                 imageId: uploadedFile.$id,
                 location: post.location,
-                tags: tags,
+                tags: tags
             }
         )
 
@@ -152,7 +154,7 @@ export async function uploadFile(file: File) {
     }
 }
 
-export async function getFilePreview(fileId: string) {
+export function getFilePreview(fileId: string) {
     try {
         const fileUrl = storage.getFilePreview(
             appwriteConfig.storageId,
@@ -163,7 +165,7 @@ export async function getFilePreview(fileId: string) {
             100,
         )
 
-        return fileUrl
+        return fileUrl;
     } catch (error) {
         console.log(error);
     }
@@ -173,8 +175,20 @@ export async function deleteFile(fileId: string) {
     try {
         await storage.deleteFile(appwriteConfig.storageId, fileId);
 
-        return { status: "ok" }
+        return { status: 'ok' }
     } catch (error) {
         console.log(error);
     }
+}
+
+export async function getRecentPosts() {
+    const posts = await databases.listDocuments(
+        appwriteConfig.databasesId,
+        appwriteConfig.postCollectionId,
+        [Query.orderDesc('$createAt'), Query.limit(20)]
+    )
+
+    if(!posts) throw Error;
+
+    return posts;
 }

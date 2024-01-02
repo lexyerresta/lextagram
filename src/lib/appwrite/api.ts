@@ -288,7 +288,7 @@ export async function updatePost(post: IUpdatePost) {
                 throw Error;
             }
 
-            image = { ...imageId, imageUrl: fileUrl, imageId: uploadedFile.$id }
+            image = { ...image, imageUrl: fileUrl, imageId: uploadedFile.$id }
         }
 
         // Convert tags in an array

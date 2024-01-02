@@ -1,6 +1,6 @@
 import { ID, Query } from 'appwrite';
 
-import { INewPost, INewUser } from "@/types";
+import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { account, appwriteConfig, avatars, databases, storage } from './config';
 
 
@@ -42,7 +42,7 @@ export async function saveUserToDB(user: {
 }) {
     try {
         const newUser = await databases.createDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             ID.unique(),
             user,
@@ -71,7 +71,7 @@ export async function getCurrentUser() {
         if (!currentAccount) throw Error;
 
         const currentUser = await databases.listDocuments(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             [Query.equal('accountId', currentAccount.$id)]
         )
@@ -106,7 +106,7 @@ export async function createPost(post: INewPost) {
 
         console.log({ fileUrl });
 
-        if(!fileUrl) {
+        if (!fileUrl) {
             deleteFile(uploadedFile.$id)
             throw Error;
         }
@@ -116,7 +116,7 @@ export async function createPost(post: INewPost) {
 
         // Save post to database
         const newPost = await databases.createDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.postCollectionId,
             ID.unique(),
             {
@@ -129,7 +129,7 @@ export async function createPost(post: INewPost) {
             }
         )
 
-        if(!newPost) {
+        if (!newPost) {
             await deleteFile(uploadedFile.$id)
             throw Error;
         }
@@ -183,12 +183,12 @@ export async function deleteFile(fileId: string) {
 
 export async function getRecentPosts() {
     const posts = await databases.listDocuments(
-        appwriteConfig.databasesId,
+        appwriteConfig.databaseId,
         appwriteConfig.postCollectionId,
         [Query.orderDesc('$createAt'), Query.limit(20)]
     )
 
-    if(!posts) throw Error;
+    if (!posts) throw Error;
 
     return posts;
 }
@@ -196,7 +196,7 @@ export async function getRecentPosts() {
 export async function likePost(postId: string, likesArray: string[]) {
     try {
         const updatedPost = await databases.updateDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.postCollectionId,
             postId,
             {
@@ -204,7 +204,7 @@ export async function likePost(postId: string, likesArray: string[]) {
             }
         )
 
-        if(!updatedPost) throw Error;
+        if (!updatedPost) throw Error;
 
         return updatedPost
     } catch (error) {
@@ -215,7 +215,7 @@ export async function likePost(postId: string, likesArray: string[]) {
 export async function savePost(postId: string, userId: string) {
     try {
         const updatedPost = await databases.createDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.savesCollectionId,
             ID.unique(),
             {
@@ -224,7 +224,7 @@ export async function savePost(postId: string, userId: string) {
             }
         )
 
-        if(!updatedPost) throw Error;
+        if (!updatedPost) throw Error;
 
         return updatedPost
     } catch (error) {
@@ -232,15 +232,17 @@ export async function savePost(postId: string, userId: string) {
     }
 }
 
+// DELETE SAVED POST
+
 export async function deleteSavedPost(savedRecordId: string) {
     try {
         const statusCode = await databases.deleteDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.savesCollectionId,
             savedRecordId,
         )
 
-        if(!statusCode) throw Error;
+        if (!statusCode) throw Error;
 
         return { status: 'ok' }
     } catch (error) {
@@ -248,3 +250,85 @@ export async function deleteSavedPost(savedRecordId: string) {
     }
 }
 
+export async function getPostById(postId: string) {
+    try {
+        const post = await databases.getDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.postCollectionId,
+            postId
+        )
+
+        return post;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export async function updatePost(post: IUpdatePost) {
+    const hasFileToUpdate = post.file.length > 0;
+
+    try {
+        let image = {
+            imageUrl: post.imageUrl,
+            imageId: post.imageId,
+        }
+
+        if (hasFileToUpdate) {
+            // Upload image to storage
+            const uploadedFile = await uploadFile(post.file[0]);
+            if (!uploadedFile) throw Error;
+
+            // Get file url
+            const fileUrl = getFilePreview(uploadedFile.$id);
+
+            console.log({ fileUrl });
+
+            if (!fileUrl) {
+                deleteFile(uploadedFile.$id)
+                throw Error;
+            }
+
+            image = { ...imageId, imageUrl: fileUrl, imageId: uploadedFile.$id }
+        }
+
+        // Convert tags in an array
+        const tags = post.tags?.replace(/ /g, '').split(',') || [];
+
+        // Save post to database
+        const updatedPost = await databases.updateDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.postCollectionId,
+            post.postId,
+            {
+                caption: post.caption,
+                imageUrl: image.imageUrl,
+                imageId: image.imageId,
+                location: post.location,
+                tags: tags
+            }
+        )
+
+        if (!updatedPost) {
+            await deleteFile(post.imageId)
+            throw Error;
+        }
+
+        return updatedPost;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export async function deletePost(postId: string, imageId: string) {
+    if (!postId || !imageId) throw Error;
+
+    try {
+        await databases.deleteDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.postCollectionId,
+            postId
+        )
+    } catch (error) {
+        console.log(error);
+    }
+}

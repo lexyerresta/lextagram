@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 
-export function formatDateString(dateString: string) {
+export function formatDate(dateString: string) {
   const options: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "short",
@@ -26,7 +26,7 @@ export function formatDateString(dateString: string) {
 }
 
 // 
-export const multiFormatDateString = (timestamp: string = ""): string => {
+export const multiFormatDate = (timestamp: string = ""): string => {
   const timestampNum = Math.round(new Date(timestamp).getTime() / 1000);
   const date: Date = new Date(timestampNum * 1000);
   const now: Date = new Date();
@@ -39,7 +39,7 @@ export const multiFormatDateString = (timestamp: string = ""): string => {
 
   switch (true) {
     case Math.floor(diffInDays) >= 30:
-      return formatDateString(timestamp);
+      return formatDate(timestamp);
     case Math.floor(diffInDays) === 1:
       return `${Math.floor(diffInDays)} day ago`;
     case Math.floor(diffInDays) > 1 && diffInDays < 30:

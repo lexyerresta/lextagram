@@ -236,8 +236,6 @@ export async function savePost(postId: string, userId: string) {
     }
 }
 
-// DELETE SAVED POST
-
 export async function deleteSavedPost(savedRecordId: string) {
     try {
         const statusCode = await databases.deleteDocument(
@@ -337,10 +335,10 @@ export async function deletePost(postId: string, imageId: string) {
     }
 }
 
-export async function getInfinitePosts({ pageParam }: { pageParam: number}) {
+export async function getInfinitePosts({ pageParam }: { pageParam: number }) {
     const queries: any[] = [Query.orderDesc("$updatedAt"), Query.limit(10)]
 
-    if(pageParam) {
+    if (pageParam) {
         queries.push(Query.cursorAfter(pageParam.toString()));
     }
 
